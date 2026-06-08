@@ -1,4 +1,4 @@
-const API = "http://127.0.0.1:8000/api";
+const API = "https://axes-solutions.onrender.com/api";
 const AX_STORAGE = window.AXStorage || {
   getItem() { return null; },
   setItem() {},

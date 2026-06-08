@@ -377,7 +377,7 @@
     if (typeof fetch !== "function") {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open(opts.method || "GET", `http://127.0.0.1:8000/api${path}`);
+        xhr.open(opts.method || "GET", `https://axes-solutions.onrender.com/api${path}`);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onload = () => {
           let data = null;
@@ -396,7 +396,7 @@
       });
     }
 
-    const res = await fetch(`http://127.0.0.1:8000/api${path}`, {
+    const res = await fetch(`https://axes-solutions.onrender.com/api${path}`, {
       ...opts,
       headers: {
         "Content-Type": "application/json",
