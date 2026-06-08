@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.reviews.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+ 
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+
+  <div id="header-slot"></div>
+
+  <main class="page">
+    <div class="container">
+
+      <div class="section-head fade-in">
+        <h2 data-i18n="reviews.title"></h2>
+        <p data-i18n="reviews.lead"></p>
+      </div>
+
+      <div id="reviews-grid" class="reviews-grid">
+        <div class="empty-state" data-i18n="reviews.loading"></div>
+      </div>
+
+      <div style="margin-top:60px;">
+        <div class="section-head fade-in">
+          <h3 data-i18n="reviews.add" style="font-size:1.6rem;"></h3>
+        </div>
+
+        <form id="review-form" class="form-card" novalidate>
+
+          <div class="form-success" id="rv-success" data-i18n="reviews.success"></div>
+
+          <div class="form-row">
+            <label for="rv-name" data-i18n="reviews.field.name"></label>
+            <input type="text" id="rv-name" required />
+            <div class="form-error" data-for="rv-name"></div>
+          </div>
+
+          <div class="form-row">
+            <label for="rv-company" data-i18n="reviews.field.company"></label>
+            <input type="text" id="rv-company" />
+          </div>
+
+          <div class="form-row">
+            <label for="rv-rating" data-i18n="reviews.field.rating"></label>
+            <select id="rv-rating">
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★</option>
+              <option value="3">★★★</option>
+              <option value="2">★★</option>
+              <option value="1">★</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="rv-text" data-i18n="reviews.field.text"></label>
+            <textarea id="rv-text" required></textarea>
+            <div class="form-error" data-for="rv-text"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;" data-i18n="reviews.submit"></button>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  
+  <script src="../js/i18n.js"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js"></script>
+
+  
+  <script>
+    window.mountLayout();
+    window.I18N.init();
+
+    function renderStars(n) {
+      return "★".repeat(n) + "☆".repeat(5 - n);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[c]));
+    }
+
+    async function loadReviews() {
+      const grid = document.getElementById("reviews-grid");
+
+      try {
+        const list = await window.AX.api("/reviews");
+
+        if (!list.length) {
+          grid.innerHTML = `<div class="empty-state">
+            ${window.I18N.t("reviews.empty")}
+          </div>`;
+          return;
+        }
+
+        grid.innerHTML = list.map(r => `
+          <article class="review-card fade-in">
+            <div class="review-stars">${renderStars(r.rating)}</div>
+            <p class="review-text">${escapeHtml(r.text)}</p>
+            <div class="review-author">
+              <strong>${escapeHtml(r.name)}</strong>
+              ${r.company ? `<span>${escapeHtml(r.company)}</span>` : ""}
+            </div>
+          </article>
+        `).join("");
+
+      } catch (e) {
+        grid.innerHTML = `<div class="empty-state">${window.I18N.format("reviews.loadError", { message: escapeHtml(e.message) })}</div>`;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadReviews();
+
+      const form = document.getElementById("review-form");
+      const success = document.getElementById("rv-success");
+
+      const showError = (id, key) => {
+        const el = form.querySelector(`.form-error[data-for="${id}"]`);
+        if (el) {
+          el.textContent = window.I18N.t(key);
+          el.classList.add("visible");
+        }
+      };
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        form.querySelectorAll(".form-error")
+          .forEach(el => el.classList.remove("visible"));
+
+        success.classList.remove("visible");
+
+        const name = document.getElementById("rv-name").value.trim();
+        const company = document.getElementById("rv-company").value.trim();
+        const rating = parseInt(document.getElementById("rv-rating").value, 10);
+        const text = document.getElementById("rv-text").value.trim();
+
+        let valid = true;
+
+        if (name.length < 2) {
+          showError("rv-name", "common.too_short");
+          valid = false;
+        }
+
+        if (text.length < 5) {
+          showError("rv-text", "common.too_short");
+          valid = false;
+        }
+
+        if (!valid) return;
+
+        try {
+          await window.AX.api("/reviews", {
+            method: "POST",
+            body: JSON.stringify({ name, company, rating, text })
+          });
+
+          success.classList.add("visible");
+          form.reset();
+
+          window.AX.toast(window.I18N.t("reviews.success"), "success");
+
+        } catch (err) {
+          window.AX.toast(err.message, "error");
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.admin.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body class="admin-body">
+  <main class="admin-app">
+    <aside class="admin-aside">
+      <a href="index.html" class="brand admin-brand">
+        <img src="../img/logo.png" class="brand-logo" alt="" data-i18n-alt="brand.logoAlt">
+        <span>Axes.admin</span>
+      </a>
+
+      <nav class="admin-sidebar">
+        <h4 data-i18n="admin.sidebar.title"></h4>
+
+        <button class="active" data-tab="requests">
+          <span data-i18n="admin.tab.requests"></span>
+          <small data-i18n="admin.role.admin"></small>
+        </button>
+
+        <button data-tab="projects">
+          <span data-i18n="admin.tab.projects"></span>
+          <small data-i18n="admin.role.admin"></small>
+        </button>
+
+        <button data-tab="specialists">
+          <span data-i18n="admin.tab.specialists"></span>
+          <small data-i18n="admin.role.admin"></small>
+        </button>
+
+        <button data-tab="reviews">
+          <span data-i18n="admin.tab.reviews"></span>
+          <small data-i18n="admin.role.admin"></small>
+        </button>
+
+        <button data-tab="chat">
+          <span data-i18n="admin.tab.chat"></span>
+          <small data-i18n="admin.role.admin"></small>
+        </button>
+
+        <button data-tab="users">
+          <span data-i18n="admin.tab.users"></span>
+          <small data-i18n="admin.role.admin"></small>
+        </button>
+      </nav>
+
+      <div class="admin-aside-note">
+        <strong data-i18n="admin.closed.title"></strong>
+        <span data-i18n="admin.closed.body"></span>
+      </div>
+    </aside>
+
+    <section class="admin-main">
+      <div class="admin-topbar">
+        <div>
+          <h1 data-testid="admin-title" data-i18n="admin.title"></h1>
+          <p id="admin-subtitle" data-i18n="admin.profile.loading"></p>
+        </div>
+
+        <div class="admin-header-actions">
+          <select id="lang-select" class="lang-select" data-testid="lang-select">
+            <option value="ru">RU</option>
+            <option value="kz">KZ</option>
+            <option value="en">EN</option>
+          </select>
+          <span class="role-pill" id="role-pill" data-i18n="admin.role"></span>
+          <a class="btn btn-ghost btn-sm" href="index.html" data-i18n="admin.toSite"></a>
+          <button class="btn btn-primary btn-sm" id="logout-btn" data-testid="admin-logout" data-i18n="admin.logout"></button>
+        </div>
+      </div>
+
+      <section class="admin-kpis" id="admin-kpis" aria-live="polite"></section>
+
+      <div class="admin-panels">
+        <div id="panel-requests" class="table-wrap">
+          <div class="empty-state" data-i18n="admin.loading.requests"></div>
+        </div>
+
+        <div id="panel-projects" class="table-wrap" style="display:none;">
+          <div class="empty-state" data-i18n="admin.loading.projects"></div>
+        </div>
+
+        <div id="panel-specialists" class="table-wrap" style="display:none;">
+          <div class="empty-state" data-i18n="admin.loading.specialists"></div>
+        </div>
+
+        <div id="panel-reviews" class="table-wrap" style="display:none;">
+          <div class="empty-state" data-i18n="admin.loading.reviews"></div>
+        </div>
+
+        <div id="panel-chat" class="table-wrap" style="display:none;">
+          <div class="empty-state" data-i18n="admin.loading.chat"></div>
+        </div>
+
+        <div id="panel-users" class="table-wrap" style="display:none;">
+          <div class="empty-state" data-i18n="admin.loading.users"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    const t = (key) => window.I18N?.t(key) || key;
+    const tf = (key, values) => window.I18N?.format(key, values) || key;
+    const roleLabel = role => ["admin", "user", "client", "manager", "moderator"].includes(role)
+      ? t(`admin.role.${role}`)
+      : role;
+    const serviceLabel = service => ["hr", "it", "accounting", "legal"].includes(service)
+      ? t(`service.label.${service}`)
+      : t("service.label.unknown");
+    const statusLabel = status => ["new", "in_progress", "review", "done", "cancelled"].includes(status)
+      ? t(`status.${status}`)
+      : status;
+    const tagLabel = tag => t(`tag.${tag}`) === `tag.${tag}` ? tag : t(`tag.${tag}`);
+    const complexityLabel = value => {
+      const normalized = String(value || "").toLowerCase();
+      if (normalized === "high" || value === window.I18N?.base("legacy.complexity.high")) return t("smart.complexity.high");
+      if (normalized === "medium" || value === window.I18N?.base("legacy.complexity.medium")) return t("smart.complexity.medium");
+      return value || "-";
+    };
+
+    const roleAccess = {
+      admin: ["requests", "projects", "specialists", "reviews", "chat", "users"]
+    };
+
+    let activeChatId = null;
+    let chatTimer = null;
+    const adminStats = {
+      activeRequests: 0,
+      projects: 0,
+      completedTasks: 0,
+      avgRating: 0,
+      specialists: 0,
+      users: 0
+    };
+
+    function updateAdminKpis(partial = {}) {
+      Object.assign(adminStats, partial);
+      const box = document.getElementById("admin-kpis");
+      if (!box) return;
+
+      box.innerHTML = `
+        <article><strong>${adminStats.activeRequests}</strong><span>${t("admin.kpi.activeRequests")}</span></article>
+        <article><strong>${adminStats.projects}</strong><span>${t("admin.kpi.projects")}</span></article>
+        <article><strong>${adminStats.completedTasks}</strong><span>${t("admin.kpi.completedTasks")}</span></article>
+        <article><strong>${adminStats.avgRating}</strong><span>${t("admin.kpi.avgRating")}</span></article>
+        <article><strong>${adminStats.specialists}</strong><span>${t("admin.kpi.specialists")}</span></article>
+        <article><strong>${adminStats.users}</strong><span>${t("admin.kpi.users")}</span></article>
+      `;
+    }
+
+    async function loadAdminStats() {
+      try {
+        const stats = await window.AX.api("/admin/stats");
+        updateAdminKpis({
+          activeRequests: stats.active_requests,
+          projects: stats.projects_total,
+          completedTasks: stats.completed_tasks,
+          avgRating: stats.average_specialist_rating,
+          specialists: stats.specialists_total,
+          users: stats.users_total
+        });
+      } catch (_) {
+        updateAdminKpis();
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, c =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[c])
+      );
+    }
+
+    function fmtDate(iso) {
+      try {
+        return new Date(iso).toLocaleString(window.I18N?.locale() || "ru-RU");
+      } catch {
+        return iso;
+      }
+    }
+
+    function statusBadge(status) {
+      const cls = {
+        new: "badge-new",
+        in_progress: "badge-progress",
+        review: "badge-pending",
+        cancelled: "badge-pending",
+        done: "badge-done"
+      }[status] || "badge-new";
+
+      return `<span class="badge ${cls}">${escapeHtml(statusLabel(status))}</span>`;
+    }
+
+    function approvalBadge(approved) {
+      return approved
+        ? `<span class="badge badge-approved">${t("admin.badge.published")}</span>`
+        : `<span class="badge badge-pending">${t("admin.badge.moderation")}</span>`;
+    }
+
+    function requestTags(tags = []) {
+      if (!tags.length) return `<span class="muted">${t("admin.tags.empty")}</span>`;
+      return `<div class="admin-chip-list">${tags.map(tag => `<span>${escapeHtml(tagLabel(tag))}</span>`).join("")}</div>`;
+    }
+
+    function compactText(text, limit = 180) {
+      const value = String(text || "").trim();
+      return value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
+    }
+
+    function noAccess(panel, role) {
+      panel.innerHTML = `<div class="empty-state">
+        ${tf("admin.noAccess", { role: escapeHtml(roleLabel(role)) })}
+      </div>`;
+    }
+
+    async function loadRequests(role) {
+      const wrap = document.getElementById("panel-requests");
+      if (!roleAccess[role]?.includes("requests")) {
+        noAccess(wrap, role);
+        return;
+      }
+
+      try {
+        const list = await window.AX.api("/requests");
+        updateAdminKpis({ activeRequests: list.filter(item => ["new", "in_progress", "review"].includes(item.status)).length });
+
+        if (!list.length) {
+          wrap.innerHTML = `
+            <div class="admin-panel-intro">
+              <div>
+                <h2>${t("admin.tab.requests")}</h2>
+                <p>${t("admin.panel.requestsLead")}</p>
+              </div>
+            </div>
+            <div class="empty-state">${t("admin.empty.requests")}</div>
+          `;
+          return;
+        }
+
+        wrap.innerHTML = `
+          <div class="admin-panel-intro">
+            <div>
+              <h2>${t("admin.tab.requests")}</h2>
+              <p>${t("admin.panel.requestsLead")}</p>
+            </div>
+          </div>
+          <div class="admin-panel-tools">
+            <input type="search" data-admin-search placeholder="${t("admin.tools.search.ph")}" />
+            <select data-admin-status>
+              <option value="all">${t("admin.tools.all")}</option>
+              ${["new", "in_progress", "review", "done", "cancelled"].map(status => `<option value="${status}">${statusLabel(status)}</option>`).join("")}
+            </select>
+            <select data-admin-service>
+              <option value="all">${t("admin.tools.all")}</option>
+              ${["it", "hr", "accounting", "legal"].map(service => `<option value="${service}">${serviceLabel(service)}</option>`).join("")}
+            </select>
+          </div>
+          <div data-admin-list></div>
+        `;
+
+        const body = wrap.querySelector("[data-admin-list]");
+        const search = wrap.querySelector("[data-admin-search]");
+        const statusFilter = wrap.querySelector("[data-admin-status]");
+        const serviceFilter = wrap.querySelector("[data-admin-service]");
+
+        const bindRequestActions = () => {
+          wrap.querySelectorAll(".status-actions").forEach(group => {
+            group.addEventListener("click", async (e) => {
+              const btn = e.target.closest(".status-btn");
+              if (!btn || btn.classList.contains("active")) return;
+
+              await window.AX.api(`/requests/${group.dataset.id}/status`, {
+                method: "PATCH",
+                body: JSON.stringify({ status: btn.dataset.status })
+              });
+              loadRequests(role);
+            });
+          });
+
+          wrap.querySelectorAll(".del-req").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              if (!confirm(t("admin.confirm.deleteRequest"))) return;
+
+              await window.AX.api(`/requests/${btn.dataset.id}`, {
+                method: "DELETE"
+              });
+
+              loadRequests(role);
+            });
+          });
+        };
+
+        const renderRequests = () => {
+          const query = (search?.value || "").toLowerCase();
+          const status = statusFilter?.value || "all";
+          const service = serviceFilter?.value || "all";
+          const filtered = list.filter(r => {
+            const haystack = `${r.title || ""} ${r.company || ""} ${r.email || ""} ${r.message || ""} ${r.summary || ""}`.toLowerCase();
+            const matchesQuery = !query || haystack.includes(query);
+            const matchesStatus = status === "all" || r.status === status;
+            const matchesService = service === "all" || r.service === service;
+            return matchesQuery && matchesStatus && matchesService;
+          });
+
+          body.innerHTML = filtered.length ? `
+            <div class="admin-request-grid">
+            ${filtered.map(r => `
+              <article class="admin-request-card">
+                <header>
+                  <div>
+                    <span>${escapeHtml(serviceLabel(r.service) || r.service)}</span>
+                    <h3>${escapeHtml(r.title || r.company)}</h3>
+                  </div>
+                  ${statusBadge(r.status)}
+                </header>
+                <div class="admin-request-meta">
+                  <div><small>${t("common.client")}</small><strong>${escapeHtml(r.company)}</strong></div>
+                  <div><small>${t("common.email")}</small><strong>${escapeHtml(r.email)}</strong></div>
+                  <div><small>${t("common.phone")}</small><strong>${escapeHtml(r.phone || "-")}</strong></div>
+                  <div><small>${t("common.date")}</small><strong>${fmtDate(r.created_at)}</strong></div>
+                </div>
+                <div class="admin-request-summary">
+                  <strong>${t("admin.summary.ai")}</strong>
+                  <p>${escapeHtml(r.summary || compactText(r.message))}</p>
+                </div>
+                ${r.recommended_specialist?.specialist ? `
+                  <div class="recommended-specialist compact">
+                    <img src="${escapeHtml(r.recommended_specialist.specialist.photo || "../img/logo.png")}" alt="" />
+                    <div>
+                      <span>${t("ai.recommended")}</span>
+                      <strong>${escapeHtml(r.recommended_specialist.specialist.name)}</strong>
+                      <small>${escapeHtml(r.recommended_specialist.specialist.specialization)} · ${t("specialists.rating")} ${escapeHtml(r.recommended_specialist.specialist.rating)}</small>
+                    </div>
+                  </div>
+                ` : ""}
+                <div class="admin-request-meta">
+                  <div><small>${t("common.cost")}</small><strong>${escapeHtml(r.estimate || t("common.estimateNeeded"))}</strong></div>
+                  <div><small>${t("common.complexity")}</small><strong>${escapeHtml(complexityLabel(r.complexity))}</strong></div>
+                  <div><small>${t("common.budgetClient")}</small><strong>${escapeHtml(r.budget || t("common.notSpecified"))}</strong></div>
+                  <div><small>${t("common.deadline")}</small><strong>${escapeHtml(r.deadline || t("common.toClarify"))}</strong></div>
+                </div>
+                ${requestTags(r.tags)}
+                <p class="admin-message">${escapeHtml(compactText(r.message, 260))}</p>
+                <footer>
+                  <div class="status-actions" data-id="${r.id}">
+                    ${["new", "in_progress", "review", "done", "cancelled"].map(status => `
+                      <button
+                        type="button"
+                        class="status-btn ${r.status === status ? "active" : ""}"
+                        data-status="${status}"
+                      >
+                        ${statusLabel(status)}
+                      </button>
+                    `).join("")}
+                  </div>
+                  <div class="row-actions">
+                    ${r.project_id ? `<a class="btn btn-ghost btn-sm" href="project-tracker.html?id=${encodeURIComponent(r.project_id)}">${t("admin.action.openProject")}</a>` : ""}
+                    <button class="btn btn-danger btn-sm del-req" data-id="${r.id}">${t("common.delete")}</button>
+                  </div>
+                </footer>
+              </article>
+            `).join("")}
+            </div>
+          ` : `<div class="empty-state">${t("admin.empty.filtered")}</div>`;
+          bindRequestActions();
+        };
+
+        [search, statusFilter, serviceFilter].forEach(item => item?.addEventListener("input", renderRequests));
+        [statusFilter, serviceFilter].forEach(item => item?.addEventListener("change", renderRequests));
+        renderRequests();
+      } catch (err) {
+        wrap.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    async function loadProjects(role) {
+      const wrap = document.getElementById("panel-projects");
+      if (!roleAccess[role]?.includes("projects")) {
+        noAccess(wrap, role);
+        return;
+      }
+
+      try {
+        const projects = await window.AX.api("/projects");
+        updateAdminKpis({ projects: projects.length });
+
+        if (!projects.length) {
+          wrap.innerHTML = `
+            <div class="admin-panel-intro">
+              <div>
+                <h2>${t("admin.tab.projects")}</h2>
+                <p>${t("admin.panel.projectsLead")}</p>
+              </div>
+            </div>
+            <div class="empty-state">${t("admin.empty.projects")}</div>
+          `;
+          return;
+        }
+
+        wrap.innerHTML = `
+          <div class="admin-panel-intro">
+            <div>
+              <h2>${t("admin.tab.projects")}</h2>
+              <p>${t("admin.panel.projectsLead")}</p>
+            </div>
+          </div>
+          <div class="admin-panel-tools">
+            <input type="search" data-admin-search placeholder="${t("admin.tools.search.ph")}" />
+            <select data-admin-status>
+              <option value="all">${t("admin.tools.all")}</option>
+              ${["in_progress", "review", "done"].map(status => `<option value="${status}">${statusLabel(status)}</option>`).join("")}
+            </select>
+            <select data-admin-service>
+              <option value="all">${t("admin.tools.all")}</option>
+              ${["it", "hr", "accounting", "legal"].map(service => `<option value="${service}">${serviceLabel(service)}</option>`).join("")}
+            </select>
+          </div>
+          <div data-admin-list></div>
+        `;
+
+        const body = wrap.querySelector("[data-admin-list]");
+        const search = wrap.querySelector("[data-admin-search]");
+        const statusFilter = wrap.querySelector("[data-admin-status]");
+        const serviceFilter = wrap.querySelector("[data-admin-service]");
+
+        const bindProjectActions = () => {
+          wrap.querySelectorAll("[data-task-status]").forEach(select => {
+            select.addEventListener("change", async () => {
+              const card = select.closest("[data-project]");
+              const project = projects.find(item => item.id === card.dataset.project);
+              const task = project?.payload?.tasks?.find(item => item.id === select.dataset.taskStatus);
+              if (!project || !task) return;
+
+              task.status = select.value;
+              task.updatedAt = new Date().toISOString();
+              project.payload.activity = project.payload.activity || [];
+              project.payload.activity.unshift({
+                text: tf("admin.task.updated", { title: task.title }),
+                at: new Date().toISOString()
+              });
+
+              await window.AX.api(`/projects/${project.id}`, {
+                method: "PATCH",
+                body: JSON.stringify({
+                  status: project.payload.tasks.every(item => item.status === "done") ? "done" : "in_progress",
+                  payload: project.payload
+                })
+              });
+              await loadProjects(role);
+            });
+          });
+
+          wrap.querySelectorAll("[data-project-status]").forEach(group => {
+            group.addEventListener("click", async (e) => {
+              const btn = e.target.closest(".status-btn");
+              if (!btn || btn.classList.contains("active")) return;
+
+              await window.AX.api(`/projects/${group.dataset.projectStatus}`, {
+                method: "PATCH",
+                body: JSON.stringify({ status: btn.dataset.status })
+              });
+              await loadProjects(role);
+            });
+          });
+        };
+
+        const renderProjects = () => {
+          const query = (search?.value || "").toLowerCase();
+          const status = statusFilter?.value || "all";
+          const service = serviceFilter?.value || "all";
+          const filtered = projects.filter(item => {
+            const haystack = `${item.title || ""} ${item.company || ""} ${item.email || ""}`.toLowerCase();
+            const matchesQuery = !query || haystack.includes(query);
+            const matchesStatus = status === "all" || item.status === status;
+            const matchesService = service === "all" || item.service === service;
+            return matchesQuery && matchesStatus && matchesService;
+          });
+
+          body.innerHTML = filtered.length ? `
+          <div class="admin-project-list">
+            ${filtered.map(item => {
+              const payload = item.payload || {};
+              const tasks = payload.tasks || [];
+              const done = tasks.filter(task => task.status === "done").length;
+              const progress = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+
+              return `
+                <article class="admin-project-card" data-project="${item.id}">
+                  <header>
+                    <div>
+                      <span>${escapeHtml(serviceLabel(item.service) || item.service || t("service.label.unknown"))}</span>
+                      <h3>${escapeHtml(item.title)}</h3>
+                      <p>${escapeHtml(item.company || item.email || t("common.client"))}</p>
+                    </div>
+                    ${statusBadge(item.status)}
+                  </header>
+                  <div class="tracker-progress"><span style="width:${progress}%"></span></div>
+                  <div class="admin-project-tasks">
+                    ${tasks.map(task => `
+                      <div class="admin-project-task">
+                        <div>
+                          <strong>${escapeHtml(task.title)}</strong>
+                          <small>${escapeHtml(task.stage || t("common.stage"))} · ${task.deadline || t("common.noDeadline")}</small>
+                        </div>
+                        <select data-task-status="${task.id}">
+                          ${["new", "in_progress", "review", "done", "cancelled"].map(status => `
+                            <option value="${status}" ${task.status === status ? "selected" : ""}>${statusLabel(status)}</option>
+                          `).join("")}
+                        </select>
+                      </div>
+                    `).join("")}
+                  </div>
+                  <footer>
+                    <a class="btn btn-ghost btn-sm" href="project-tracker.html?id=${encodeURIComponent(item.id)}">${t("admin.action.viewAsClient")}</a>
+                    <div class="status-actions" data-project-status="${item.id}">
+                      ${["in_progress", "review", "done"].map(status => `
+                        <button type="button" class="status-btn ${item.status === status ? "active" : ""}" data-status="${status}">
+                          ${statusLabel(status)}
+                        </button>
+                      `).join("")}
+                    </div>
+                  </footer>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        ` : `<div class="empty-state">${t("admin.empty.filtered")}</div>`;
+          bindProjectActions();
+        };
+
+        [search, statusFilter, serviceFilter].forEach(item => item?.addEventListener("input", renderProjects));
+        [statusFilter, serviceFilter].forEach(item => item?.addEventListener("change", renderProjects));
+        renderProjects();
+      } catch (err) {
+        wrap.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    async function loadSpecialists(role) {
+      const wrap = document.getElementById("panel-specialists");
+      if (!roleAccess[role]?.includes("specialists")) {
+        noAccess(wrap, role);
+        return;
+      }
+
+      try {
+        const specialists = await window.AX.api("/specialists");
+        const avgRating = specialists.length
+          ? (specialists.reduce((sum, item) => sum + Number(item.rating || 0), 0) / specialists.length).toFixed(1)
+          : "0";
+        updateAdminKpis({ specialists: specialists.length, avgRating });
+
+        wrap.innerHTML = `
+          <div class="admin-panel-intro">
+            <div>
+              <h2>${t("admin.tab.specialists")}</h2>
+              <p>${t("admin.panel.specialistsLead")}</p>
+            </div>
+          </div>
+          <div class="admin-specialist-grid">
+            ${specialists.map(item => `
+              <article class="admin-specialist-card">
+                <img src="${escapeHtml(item.photo || "../img/logo.png")}" alt="" />
+                <div>
+                  <header>
+                    <div>
+                      <span>${escapeHtml(serviceLabel(item.service))}</span>
+                      <h3>${escapeHtml(item.name)}</h3>
+                      <p>${escapeHtml(item.specialization)}</p>
+                    </div>
+                    <strong class="task-status-badge is-${item.availability_status}">${t(`specialists.status.${item.availability_status}`)}</strong>
+                  </header>
+                  <div class="admin-chip-list">${(item.skills || []).map(skill => `<span>${escapeHtml(skill)}</span>`).join("")}</div>
+                  <div class="admin-request-meta">
+                    <div><small>${t("specialists.rating")}</small><strong>${escapeHtml(item.rating)}</strong></div>
+                    <div><small>${t("specialists.experience")}</small><strong>${escapeHtml(item.experience_years)}</strong></div>
+                    <div><small>${t("specialists.projects")}</small><strong>${escapeHtml(item.projects_completed)}</strong></div>
+                    <div><small>${t("specialists.tasks")}</small><strong>${escapeHtml(item.tasks_completed)}</strong></div>
+                  </div>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        `;
+      } catch (err) {
+        wrap.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    async function loadReviews(role) {
+      const wrap = document.getElementById("panel-reviews");
+      if (!roleAccess[role]?.includes("reviews")) {
+        noAccess(wrap, role);
+        return;
+      }
+
+      try {
+        const list = await window.AX.api("/admin/reviews");
+        if (!list.length) {
+          wrap.innerHTML = `<div class="empty-state">${t("admin.empty.reviews")}</div>`;
+          return;
+        }
+
+        wrap.innerHTML = `
+          <div class="admin-panel-intro">
+            <div>
+              <h2>${t("admin.tab.reviews")}</h2>
+              <p>${t("admin.panel.reviewsLead")}</p>
+            </div>
+          </div>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>${t("common.client")}</th>
+                <th>${t("common.company")}</th>
+                <th>${t("common.rating")}</th>
+                <th>${t("common.review")}</th>
+                <th>${t("common.status")}</th>
+                <th>${t("common.date")}</th>
+                <th>${t("common.actions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(r => `
+                <tr>
+                  <td><strong>${escapeHtml(r.name)}</strong></td>
+                  <td>${escapeHtml(r.company || "-")}</td>
+                  <td><span class="review-stars">${"★".repeat(r.rating)}</span></td>
+                  <td class="admin-message">${escapeHtml(r.text)}</td>
+                  <td>${approvalBadge(r.approved)}</td>
+                  <td>${fmtDate(r.created_at)}</td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="btn btn-ghost btn-sm toggle-review" data-id="${r.id}" data-approved="${r.approved}">
+                        ${r.approved ? t("admin.action.hide") : t("admin.action.publish")}
+                      </button>
+
+                      <button class="btn btn-danger btn-sm del-review" data-id="${r.id}">
+                        ${t("common.delete")}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+
+        wrap.querySelectorAll(".toggle-review").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const approved = btn.dataset.approved !== "true";
+
+            await window.AX.api(`/reviews/${btn.dataset.id}/approve`, {
+              method: "PATCH",
+              body: JSON.stringify({ approved })
+            });
+
+            loadReviews(role);
+          });
+        });
+
+        wrap.querySelectorAll(".del-review").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            if (!confirm(t("admin.confirm.deleteReview"))) return;
+
+            await window.AX.api(`/reviews/${btn.dataset.id}`, {
+              method: "DELETE"
+            });
+
+            loadReviews(role);
+          });
+        });
+      } catch (err) {
+        wrap.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    async function loadUsers(role) {
+      const wrap = document.getElementById("panel-users");
+      if (!roleAccess[role]?.includes("users")) {
+        noAccess(wrap, role);
+        return;
+      }
+
+      try {
+        const users = await window.AX.api("/users");
+        updateAdminKpis({ users: users.length });
+
+        wrap.innerHTML = `
+          <div class="admin-panel-intro">
+            <div>
+              <h2>${t("admin.tab.users")}</h2>
+              <p>${t("admin.panel.usersLead")}</p>
+            </div>
+          </div>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>${t("common.email")}</th>
+                <th>${t("common.name")}</th>
+                <th>${t("common.company")}</th>
+                <th>${t("common.role")}</th>
+                <th>${t("common.created")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${users.map(user => `
+                <tr>
+                  <td><strong>${escapeHtml(user.email)}</strong></td>
+                  <td>${escapeHtml(user.name || "-")}</td>
+                  <td>${escapeHtml(user.company || "-")}</td>
+                  <td><span class="badge badge-approved">${escapeHtml(roleLabel(user.role))}</span></td>
+                  <td>${fmtDate(user.created_at)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      } catch (err) {
+        wrap.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    async function loadChat(role) {
+      const wrap = document.getElementById("panel-chat");
+      if (!roleAccess[role]?.includes("chat")) {
+        noAccess(wrap, role);
+        return;
+      }
+
+      try {
+        const sessions = await window.AX.api("/admin/chat/sessions");
+        if (!sessions.length) {
+          wrap.innerHTML = `<div class="empty-state">${t("admin.empty.chat")}</div>`;
+          return;
+        }
+
+        if (!activeChatId || !sessions.some(item => item.id === activeChatId)) {
+          activeChatId = sessions[0].id;
+        }
+
+        const active = sessions.find(item => item.id === activeChatId) || sessions[0];
+
+        wrap.innerHTML = `
+          <div class="admin-panel-intro">
+            <div>
+              <h2>${t("admin.tab.chat")}</h2>
+              <p>${t("admin.panel.chatLead")}</p>
+            </div>
+          </div>
+          <div class="admin-chat">
+            <div class="admin-chat-list">
+              ${sessions.map(item => `
+                <button class="admin-chat-item ${item.id === activeChatId ? "active" : ""}" data-id="${item.id}">
+                  <strong>
+                    ${escapeHtml(item.name || t("chat.guest"))}
+                    ${item.status === "closed" ? `<small>${t("admin.chat.closed")}</small>` : `<small>${t("admin.chat.online")}</small>`}
+                  </strong>
+                  <span>${escapeHtml(item.email || item.client_id)}</span>
+                  <span>${escapeHtml(item.last_message || t("admin.chat.new"))}</span>
+                </button>
+              `).join("")}
+            </div>
+
+            <div class="admin-chat-room">
+              <div class="admin-chat-head">
+                <div>
+                  <h3>${escapeHtml(active.name || t("chat.guest"))}</h3>
+                  <p>${escapeHtml(active.email || active.client_id)} · ${fmtDate(active.updated_at)}</p>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="close-chat-btn" ${active.status === "closed" ? "disabled" : ""}>
+                  ${t("admin.action.closeChat")}
+                </button>
+              </div>
+              <div class="admin-chat-messages" id="admin-chat-messages">
+                <div class="empty-state">${t("admin.chat.loading")}</div>
+              </div>
+              <form class="admin-chat-form" id="admin-chat-form">
+                <textarea id="admin-chat-text" placeholder="${t("admin.chat.placeholder")}" maxlength="1200" required></textarea>
+                <button class="btn btn-primary" type="submit">${t("admin.chat.send")}</button>
+              </form>
+            </div>
+          </div>
+        `;
+
+        wrap.querySelectorAll(".admin-chat-item").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            activeChatId = btn.dataset.id;
+            await loadChat(role);
+          });
+        });
+
+        document.getElementById("admin-chat-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const input = document.getElementById("admin-chat-text");
+          const text = input.value.trim();
+          if (!text) return;
+
+          await window.AX.api(`/admin/chat/${activeChatId}/message`, {
+            method: "POST",
+            body: JSON.stringify({ text })
+          });
+          input.value = "";
+          await loadChatMessages();
+        });
+
+        document.getElementById("close-chat-btn").addEventListener("click", async () => {
+          await window.AX.api(`/admin/chat/${activeChatId}/close`, { method: "PATCH" });
+          await loadChat(role);
+        });
+
+        await loadChatMessages();
+      } catch (err) {
+        wrap.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    async function loadChatMessages() {
+      if (!activeChatId) return;
+
+      const box = document.getElementById("admin-chat-messages");
+      if (!box) return;
+
+      try {
+        const messages = await window.AX.api(`/admin/chat/${activeChatId}/messages`);
+
+        if (!messages.length) {
+          box.innerHTML = `<div class="empty-state">${t("admin.empty.dialog")}</div>`;
+          return;
+        }
+
+        box.innerHTML = messages.map(item => `
+          <div class="admin-chat-bubble ${item.sender === "admin" ? "admin" : "client"}">
+            <div>${escapeHtml(item.text)}</div>
+            <time>${item.sender === "admin" ? t("admin.chat.manager") : t("common.client")} · ${fmtDate(item.created_at)}</time>
+          </div>
+        `).join("");
+        box.scrollTop = box.scrollHeight;
+      } catch (err) {
+        box.innerHTML = `<div class="empty-state">${tf("common.errorWithMessage", { message: escapeHtml(err.message) })}</div>`;
+      }
+    }
+
+    function openTab(tab) {
+      document.querySelectorAll(".admin-sidebar button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+      });
+
+      ["requests", "projects", "specialists", "reviews", "chat", "users"].forEach(name => {
+        document.getElementById(`panel-${name}`).style.display =
+          name === tab ? "" : "none";
+      });
+
+      if (chatTimer) {
+        clearInterval(chatTimer);
+        chatTimer = null;
+      }
+      if (tab === "chat") {
+        chatTimer = setInterval(loadChatMessages, 3500);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (!window.AX.isAuthenticated()) {
+        window.location.href = "login.html?next=admin";
+        return;
+      }
+
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        window.AX.logout();
+      });
+
+      let profile;
+      try {
+        profile = await window.AX.api("/auth/me");
+        localStorage.setItem("ax.email", profile.email);
+        localStorage.setItem("ax.role", profile.role);
+      } catch (err) {
+        window.AX.logout();
+        return;
+      }
+
+      const role = profile.role;
+      if (!window.AX.isAdmin() || role !== "admin") {
+        window.location.href = "account.html";
+        return;
+      }
+      document.getElementById("role-pill").textContent = roleLabel(role);
+      document.getElementById("admin-subtitle").textContent =
+        `${profile.email} · ${roleLabel(role)}`;
+      await loadAdminStats();
+
+      document.querySelectorAll(".admin-sidebar button").forEach(btn => {
+        const available = roleAccess[role]?.includes(btn.dataset.tab);
+        btn.classList.toggle("locked", !available);
+
+        btn.addEventListener("click", () => {
+          openTab(btn.dataset.tab);
+        });
+      });
+
+      const firstTab = roleAccess[role]?.[0] || "requests";
+      openTab(firstTab);
+
+      await Promise.all([
+        loadRequests(role),
+        loadProjects(role),
+        loadSpecialists(role),
+        loadReviews(role),
+        loadChat(role),
+        loadUsers(role)
+      ]);
+      await loadAdminStats();
+    });
+  </script>
+</body>
+</html>

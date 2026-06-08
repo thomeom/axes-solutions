@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.services.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+ 
+ 
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+  <div id="header-slot"></div>
+
+  <main class="page">
+    <div class="container">
+
+      <div class="section-head fade-in">
+        <h2 data-i18n="services.title"></h2>
+        <p data-i18n="services.lead"></p>
+      </div>
+
+      <div class="services-grid">
+
+        <a class="service-card fade-in" href="service-hr.html">
+          <div class="service-icon">👥</div>
+          <h3 data-i18n="services.hr.title"></h3>
+          <p data-i18n="services.hr.desc"></p>
+          <span class="service-link" data-i18n="services.link.more"></span>
+        </a>
+
+        <a class="service-card fade-in delay-1" href="service-it.html">
+          <div class="service-icon">💻</div>
+          <h3 data-i18n="services.it.title"></h3>
+          <p data-i18n="services.it.desc"></p>
+          <span class="service-link" data-i18n="services.link.more"></span>
+        </a>
+
+        <a class="service-card fade-in delay-2" href="service-accounting.html">
+          <div class="service-icon">📊</div>
+          <h3 data-i18n="services.acc.title"></h3>
+          <p data-i18n="services.acc.desc"></p>
+          <span class="service-link" data-i18n="services.link.more"></span>
+        </a>
+
+        <a class="service-card fade-in delay-3" href="service-legal.html">
+          <div class="service-icon">⚖️</div>
+          <h3 data-i18n="services.legal.title"></h3>
+          <p data-i18n="services.legal.desc"></p>
+          <span class="service-link" data-i18n="services.link.more"></span>
+        </a>
+
+      </div>
+
+      <div style="text-align:center; margin-top: 60px;">
+        <a href="requests.html" class="btn btn-primary" data-i18n="hero.cta.primary"></a>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  
+  <script src="../js/i18n.js"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    window.mountLayout();
+  </script>
+
+</body>
+</html>

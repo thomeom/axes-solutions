@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.account.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+  <div id="header-slot"></div>
+
+  <main class="page account-page">
+    <div class="container">
+      <section class="account-hero fade-in">
+        <div>
+          <span data-i18n="account.eyebrow"></span>
+          <h1 id="account-title" data-i18n="account.defaultTitle"></h1>
+          <p id="account-subtitle" data-i18n="account.loadingProfile"></p>
+        </div>
+        <div class="account-actions">
+          <a class="btn btn-primary" href="requests.html" data-i18n="account.newRequest"></a>
+          <button class="btn btn-ghost" id="account-logout" type="button" data-i18n="account.logout"></button>
+        </div>
+      </section>
+
+      <section class="account-summary fade-in delay-1" id="account-summary">
+        <div class="summary-card"><span data-i18n="account.summary.active"></span><strong>0</strong></div>
+        <div class="summary-card"><span data-i18n="account.summary.requests"></span><strong>0</strong></div>
+        <div class="summary-card"><span data-i18n="account.summary.review"></span><strong>0</strong></div>
+      </section>
+
+      <section class="account-layout fade-in delay-2">
+        <div class="account-panel">
+          <div class="account-panel__head">
+            <div>
+              <h2 data-i18n="account.projects.title"></h2>
+              <p data-i18n="account.projects.lead"></p>
+            </div>
+          </div>
+          <div class="account-list" id="account-projects">
+            <div class="empty-state" data-i18n="account.projects.loading"></div>
+          </div>
+        </div>
+
+        <div class="account-panel">
+          <div class="account-panel__head">
+            <div>
+              <h2 data-i18n="account.requests.title"></h2>
+              <p data-i18n="account.requests.lead"></p>
+            </div>
+          </div>
+          <div class="account-list" id="account-requests">
+            <div class="empty-state" data-i18n="account.requests.loading"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="account-panel document-panel fade-in delay-3">
+        <div class="account-panel__head">
+          <div>
+            <h2 data-i18n="account.documents.title"></h2>
+            <p data-i18n="account.documents.lead"></p>
+          </div>
+        </div>
+        <form id="document-form" class="document-form">
+          <div class="smart-grid">
+            <div class="form-row">
+              <label for="doc-type" data-i18n="account.documents.type"></label>
+              <select id="doc-type" name="doc_type">
+                <option value="contract" data-i18n="account.documents.contract"></option>
+                <option value="nda">NDA</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="doc-project" data-i18n="account.documents.project"></label>
+              <select id="doc-project" name="project_id"></select>
+            </div>
+          </div>
+          <div class="smart-grid">
+            <div class="form-row">
+              <label for="doc-company" data-i18n="account.documents.company"></label>
+              <input id="doc-company" name="company" type="text" required />
+            </div>
+            <div class="form-row">
+              <label for="doc-bin" data-i18n="account.documents.bin"></label>
+              <input id="doc-bin" name="bin" type="text" data-i18n-ph="account.documents.bin.ph" placeholder="" />
+            </div>
+          </div>
+          <div class="smart-grid">
+            <div class="form-row">
+              <label for="doc-director" data-i18n="account.documents.director"></label>
+              <input id="doc-director" name="director" type="text" data-i18n-ph="account.documents.director.ph" placeholder="" />
+            </div>
+            <div class="form-row">
+              <label for="doc-email" data-i18n="common.email"></label>
+              <input id="doc-email" name="contact_email" type="email" />
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="doc-address" data-i18n="account.documents.address"></label>
+            <input id="doc-address" name="address" type="text" />
+          </div>
+          <div class="document-actions">
+            <button class="btn btn-primary" type="submit" data-i18n="account.documents.download"></button>
+            <span id="document-status" data-i18n="account.documents.status"></span>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    window.mountLayout();
+
+    const t = (key) => window.I18N?.t(key) || key;
+    const tf = (key, values) => window.I18N?.format(key, values) || key;
+    const serviceLabel = service => ["hr", "it", "accounting", "legal"].includes(service)
+      ? t(`service.label.${service}`)
+      : t("service.label.unknown");
+    const statusLabel = status => ["new", "in_progress", "review", "done", "cancelled"].includes(status)
+      ? t(`status.${status}`)
+      : status;
+
+    function escapeHtml(value = "") {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function fmtDate(iso) {
+      try {
+        return new Date(iso).toLocaleDateString(window.I18N?.locale() || "ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+      } catch {
+        return iso;
+      }
+    }
+
+    function statusBadge(status) {
+      return `<span class="task-status-badge is-${status}">${escapeHtml(statusLabel(status))}</span>`;
+    }
+
+    function taskProgress(tasks = []) {
+      if (!tasks.length) return 0;
+      const weights = { new: 0, in_progress: 35, review: 70, done: 100, cancelled: 0 };
+      return Math.round(tasks.reduce((sum, task) => sum + (weights[task.status] || 0), 0) / tasks.length);
+    }
+
+    function renderProjects(projects) {
+      const box = document.getElementById("account-projects");
+      if (!projects.length) {
+        box.innerHTML = `<div class="empty-state">${t("account.projects.empty")}</div>`;
+        return;
+      }
+
+      box.innerHTML = projects.map(project => {
+        const tasks = project.payload?.tasks || [];
+        const progress = taskProgress(tasks);
+
+        return `
+          <article class="account-card">
+            <header>
+              <div>
+                <span>${escapeHtml(serviceLabel(project.service) || project.service || t("service.label.unknown"))}</span>
+                <h3>${escapeHtml(project.title)}</h3>
+              </div>
+              ${statusBadge(project.status)}
+            </header>
+            <div class="tracker-progress"><span style="width:${progress}%"></span></div>
+            <div class="account-card__meta">
+              <div><small>${t("account.meta.progress")}</small><strong>${progress}%</strong></div>
+              <div><small>${t("account.meta.tasks")}</small><strong>${tasks.length}</strong></div>
+              <div><small>${t("account.meta.updated")}</small><strong>${fmtDate(project.updated_at)}</strong></div>
+            </div>
+            <footer>
+              <a class="btn btn-primary btn-sm" href="project-tracker.html?id=${encodeURIComponent(project.id)}">${t("account.openProject")}</a>
+            </footer>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderRequests(requests) {
+      const box = document.getElementById("account-requests");
+      if (!requests.length) {
+        box.innerHTML = `<div class="empty-state">${t("account.requests.empty")}</div>`;
+        return;
+      }
+
+      box.innerHTML = requests.map(req => `
+        <article class="account-card">
+          <header>
+            <div>
+              <span>${escapeHtml(serviceLabel(req.service) || req.service)}</span>
+              <h3>${escapeHtml(req.title || req.company)}</h3>
+            </div>
+            ${statusBadge(req.status)}
+          </header>
+          <p>${escapeHtml(req.summary || req.message)}</p>
+          ${req.recommended_specialist ? renderRecommendedSpecialist(req.recommended_specialist) : ""}
+          <div class="account-card__meta">
+            <div><small>${t("account.meta.estimate")}</small><strong>${escapeHtml(req.estimate || t("account.estimate.pending"))}</strong></div>
+            <div><small>${t("account.meta.deadline")}</small><strong>${escapeHtml(req.deadline || t("common.toClarify"))}</strong></div>
+            <div><small>${t("account.meta.date")}</small><strong>${fmtDate(req.created_at)}</strong></div>
+          </div>
+          ${req.project_id ? `<footer><a class="btn btn-ghost btn-sm" href="project-tracker.html?id=${encodeURIComponent(req.project_id)}">${t("account.goProject")}</a></footer>` : ""}
+        </article>
+      `).join("");
+    }
+
+    function renderRecommendedSpecialist(recommendation) {
+      const specialist = recommendation?.specialist;
+      if (!specialist) return "";
+
+      return `
+        <div class="recommended-specialist compact">
+          <img src="${escapeHtml(specialist.photo || "../img/logo.png")}" alt="" />
+          <div>
+            <span>${t("ai.recommended")}</span>
+            <strong>${escapeHtml(specialist.name)}</strong>
+            <small>${escapeHtml(specialist.specialization)} · ${t("specialists.rating")} ${escapeHtml(specialist.rating)}</small>
+          </div>
+        </div>
+      `;
+    }
+
+    function initDocumentForm(profile, projects) {
+      const form = document.getElementById("document-form");
+      const projectSelect = document.getElementById("doc-project");
+      const status = document.getElementById("document-status");
+      if (!form || !projectSelect) return;
+
+      projectSelect.innerHTML = [
+        `<option value="">${t("account.documents.noProject")}</option>`,
+        ...projects.map(project => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.title)}</option>`)
+      ].join("");
+
+      form.company.value = profile.company || profile.name || "";
+      form.contact_email.value = profile.email || "";
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const token = window.AXStorage?.getItem("ax.token");
+        const payload = {
+          doc_type: form.doc_type.value,
+          lang: window.I18N?.current || "ru",
+          project_id: form.project_id.value,
+          company: form.company.value.trim(),
+          bin: form.bin.value.trim(),
+          address: form.address.value.trim(),
+          director: form.director.value.trim(),
+          contact_email: form.contact_email.value.trim() || profile.email
+        };
+
+        if (payload.company.length < 2) {
+          status.textContent = t("account.documents.errCompany");
+          return;
+        }
+
+        status.textContent = t("account.documents.generating");
+        try {
+          const response = await fetch(`${window.AX.API}/account/documents`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || `HTTP ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = payload.doc_type === "nda" ? "axes-nda.pdf" : "axes-contract.pdf";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          status.textContent = t("account.documents.ready");
+        } catch (err) {
+          status.textContent = tf("account.documents.error", { message: err.message });
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (!window.AX.isAuthenticated()) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      let profile;
+      try {
+        profile = await window.AX.api("/auth/me");
+      } catch (_) {
+        window.AX.logout();
+        return;
+      }
+
+      if (profile.role === "admin") {
+        window.location.href = "admin.html";
+        return;
+      }
+
+      document.getElementById("account-title").textContent = profile.name
+        ? tf("account.welcome", { name: profile.name })
+        : t("account.myCabinet");
+      document.getElementById("account-subtitle").textContent =
+        `${profile.email}${profile.company ? ` · ${profile.company}` : ""}`;
+      document.getElementById("account-logout").addEventListener("click", () => window.AX.logout());
+
+      try {
+        const [projects, requests] = await Promise.all([
+          window.AX.api("/account/projects"),
+          window.AX.api("/account/requests")
+        ]);
+
+        renderProjects(projects);
+        renderRequests(requests);
+        initDocumentForm(profile, projects);
+
+        document.getElementById("account-summary").innerHTML = `
+          <div class="summary-card"><span>${t("account.summary.active")}</span><strong>${projects.filter(item => item.status !== "done").length}</strong></div>
+          <div class="summary-card"><span>${t("account.summary.requests")}</span><strong>${requests.length}</strong></div>
+          <div class="summary-card"><span>${t("account.summary.review")}</span><strong>${projects.filter(item => item.status === "review").length}</strong></div>
+        `;
+      } catch (err) {
+        document.getElementById("account-projects").innerHTML = `<div class="empty-state">${tf("common.loadError", { message: escapeHtml(err.message) })}</div>`;
+        document.getElementById("account-requests").innerHTML = `<div class="empty-state">${tf("common.loadError", { message: escapeHtml(err.message) })}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.contacts.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+
+  <div id="header-slot"></div>
+
+  <main class="page">
+    <div class="container">
+
+      <div class="section-head fade-in">
+        <h2 data-i18n="contacts.title"></h2>
+        <p data-i18n="contacts.lead"></p>
+      </div>
+
+      <div class="contacts-grid">
+
+        <div class="contact-card fade-in" data-testid="contact-phone">
+          <h3 data-i18n="contacts.phone.title"></h3>
+          <p>+7 (727) 000-00-00</p>
+        </div>
+
+        <div class="contact-card fade-in delay-1" data-testid="contact-email">
+          <h3 data-i18n="contacts.email.title"></h3>
+          <p>hello@axessolution.com</p>
+        </div>
+
+        <div class="contact-card fade-in delay-2" data-testid="contact-location">
+          <h3 data-i18n="contacts.location.title"></h3>
+          <p data-i18n="contacts.location.value"></p>
+        </div>
+
+        <div class="contact-card fade-in delay-3" data-testid="contact-hours">
+          <h3 data-i18n="contacts.hours.title"></h3>
+          <p data-i18n="contacts.hours.value"></p>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  
+  <script src="../js/i18n.js"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    window.mountLayout();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.requests.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+  <div id="header-slot"></div>
+
+  <main class="page smart-request-page">
+    <div class="container">
+      <div class="section-head fade-in">
+        <span class="hero-eyebrow" data-i18n="smart.hero.badge"></span>
+        <h2 data-i18n="smart.title"></h2>
+        <p data-i18n="smart.lead"></p>
+      </div>
+
+      <div class="smart-shell fade-in delay-1">
+        <section class="smart-form-panel">
+          <div class="draft-line" id="draft-state" data-i18n="smart.draft.auto"></div>
+
+            <div class="request-progress" aria-label="" data-i18n-aria="smart.progress.aria">
+            <div class="request-progress__meta">
+              <span id="request-progress-label"></span>
+              <span id="request-progress-step" data-i18n="smart.step.basic"></span>
+            </div>
+            <div class="request-progress__bar">
+              <span id="request-progress-fill"></span>
+            </div>
+          </div>
+
+          <form id="smart-request-form" class="smart-form" novalidate>
+            <div class="form-success" id="rq-success" data-i18n="smart.success"></div>
+
+            <section class="service-picker" aria-label="" data-i18n-aria="smart.serviceCards.title">
+              <div class="service-picker__head">
+                <h3 data-i18n="smart.serviceCards.title"></h3>
+                <p data-i18n="smart.serviceCards.lead"></p>
+              </div>
+              <div class="service-choice-grid" id="service-picker">
+                <button type="button" class="service-choice" data-service="it">
+                  <span class="service-choice__icon" data-i18n="smart.service.short.it"></span>
+                  <strong data-i18n="requests.option.it"></strong>
+                  <small data-i18n="smart.service.it.desc"></small>
+                </button>
+                <button type="button" class="service-choice" data-service="hr">
+                  <span class="service-choice__icon" data-i18n="smart.service.short.hr"></span>
+                  <strong data-i18n="requests.option.hr"></strong>
+                  <small data-i18n="smart.service.hr.desc"></small>
+                </button>
+                <button type="button" class="service-choice" data-service="accounting">
+                  <span class="service-choice__icon" data-i18n="smart.service.short.accounting"></span>
+                  <strong data-i18n="requests.option.accounting"></strong>
+                  <small data-i18n="smart.service.accounting.desc"></small>
+                </button>
+                <button type="button" class="service-choice" data-service="legal">
+                  <span class="service-choice__icon" data-i18n="smart.service.short.legal"></span>
+                  <strong data-i18n="requests.option.legal"></strong>
+                  <small data-i18n="smart.service.legal.desc"></small>
+                </button>
+              </div>
+            </section>
+
+            <div class="smart-section is-active" data-section-name-key="smart.step.basic">
+              <div class="smart-section__head">
+                <span>01</span>
+                <div>
+                  <h3 data-i18n="smart.basic.title"></h3>
+                  <p data-i18n="smart.basic.lead"></p>
+                </div>
+              </div>
+
+              <div class="smart-grid">
+                <div class="form-row">
+                  <label for="rq-company" data-i18n="smart.company"></label>
+                  <input type="text" id="rq-company" name="company" autocomplete="organization" required />
+                  <div class="form-error" data-for="rq-company"></div>
+                </div>
+
+                <div class="form-row">
+                  <label for="rq-email" data-i18n="smart.email"></label>
+                  <input type="email" id="rq-email" name="email" autocomplete="email" required />
+                  <div class="form-error" data-for="rq-email"></div>
+                </div>
+
+                <div class="form-row">
+                  <label for="rq-phone" data-i18n="smart.phone"></label>
+                  <input type="tel" id="rq-phone" name="phone" autocomplete="tel" data-i18n-ph="smart.phone.ph" placeholder="" />
+                  <div class="form-error" data-for="rq-phone"></div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-title" data-i18n="smart.projectTitle"></label>
+                <input type="text" id="rq-title" name="title" data-i18n-ph="smart.projectTitle.ph" placeholder="" required />
+                <div class="form-error" data-for="rq-title"></div>
+              </div>
+
+              <div class="smart-grid">
+                <div class="form-row">
+                  <label for="rq-service" data-i18n="smart.service"></label>
+                  <select id="rq-service" name="service" required>
+                    <option value="" data-i18n="requests.option.choose"></option>
+                    <option value="hr" data-i18n="requests.option.hr"></option>
+                    <option value="it" data-i18n="requests.option.it"></option>
+                    <option value="accounting" data-i18n="requests.option.accounting"></option>
+                    <option value="legal" data-i18n="requests.option.legal"></option>
+                  </select>
+                  <div class="form-error" data-for="rq-service"></div>
+                </div>
+
+                <div class="form-row">
+                  <label for="rq-priority" data-i18n="smart.priority"></label>
+                  <select id="rq-priority" name="priority">
+                    <option value="normal" data-i18n="smart.priority.normal"></option>
+                    <option value="high" data-i18n="smart.priority.high"></option>
+                    <option value="urgent" data-i18n="smart.priority.urgent"></option>
+                    <option value="low" data-i18n="smart.priority.low"></option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="smart-grid business-grid">
+                <div class="form-row">
+                  <label for="rq-company-size" data-i18n="smart.companySize"></label>
+                  <select id="rq-company-size" name="companySize">
+                    <option value="micro" data-i18n="smart.companySize.micro"></option>
+                    <option value="small" selected data-i18n="smart.companySize.small"></option>
+                    <option value="medium" data-i18n="smart.companySize.medium"></option>
+                    <option value="enterprise" data-i18n="smart.companySize.enterprise"></option>
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <label for="rq-contact-method" data-i18n="smart.contactMethod"></label>
+                  <select id="rq-contact-method" name="contactMethod">
+                    <option value="email" data-i18n="smart.contact.email"></option>
+                    <option value="phone" data-i18n="smart.contact.phone"></option>
+                    <option value="whatsapp" data-i18n="smart.contact.whatsapp"></option>
+                    <option value="meeting" data-i18n="smart.contact.meeting"></option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="smart-section" data-section-name-key="smart.step.details">
+              <div class="smart-section__head">
+                <span>02</span>
+                <div>
+                  <h3 data-i18n="smart.details.title"></h3>
+                  <p data-i18n="smart.details.lead"></p>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-description" data-i18n="smart.description"></label>
+                <textarea id="rq-description" name="description" rows="8" data-i18n-ph="smart.description.ph" placeholder="" required></textarea>
+                <div class="form-error" data-for="rq-description"></div>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-outcome" data-i18n="smart.outcome"></label>
+                <input type="text" id="rq-outcome" name="outcome" data-i18n-ph="smart.outcome.ph" placeholder="" required />
+                <div class="form-error" data-for="rq-outcome"></div>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-current-process" data-i18n="smart.currentProcess"></label>
+                <textarea id="rq-current-process" name="currentProcess" rows="4" data-i18n-ph="smart.currentProcess.ph" placeholder=""></textarea>
+              </div>
+
+              <div class="smart-grid">
+                <div class="form-row">
+                  <label for="rq-budget" data-i18n="smart.budget"></label>
+                  <input type="text" id="rq-budget" name="budget" data-i18n-ph="smart.budget.ph" placeholder="" />
+                </div>
+
+                <div class="form-row">
+                  <label for="rq-deadline" data-i18n="smart.deadline"></label>
+                  <input type="text" id="rq-deadline" name="deadline" data-i18n-ph="smart.deadline.ph" placeholder="" />
+                </div>
+              </div>
+
+              <div class="chips-field" role="group" aria-label="" data-i18n-aria="smart.features.aria">
+                <label><input type="checkbox" name="tags" value="needEstimate" /> <span data-i18n="smart.tag.estimate"></span></label>
+                <label><input type="checkbox" name="tags" value="hasMaterials" /> <span data-i18n="smart.tag.materials"></span></label>
+                <label><input type="checkbox" name="tags" value="fullService" /> <span data-i18n="smart.tag.full"></span></label>
+                <label><input type="checkbox" name="tags" value="consultation" /> <span data-i18n="smart.tag.consult"></span></label>
+                <label><input type="checkbox" name="tags" value="longTerm" /> <span data-i18n="smart.tag.long"></span></label>
+              </div>
+            </div>
+
+            <div class="smart-section" id="tech-section" data-section-name-key="smart.step.format">
+              <div class="smart-section__head">
+                <span>03</span>
+                <div>
+                  <h3 data-i18n="smart.team.title"></h3>
+                  <p data-i18n="smart.team.lead"></p>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label id="stack-label" data-i18n="smart.stack.work"></label>
+                <div class="stack-grid" id="stack-options" role="group" aria-labelledby="stack-label"></div>
+              </div>
+
+              <div class="team-builder" aria-label="" data-i18n-aria="smart.team.aria">
+                <label>
+                  <span data-i18n="smart.capacity.junior"></span>
+                  <input type="number" name="juniorCount" min="0" max="12" step="1" value="0" />
+                </label>
+                <label>
+                  <span data-i18n="smart.capacity.middle"></span>
+                  <input type="number" name="middleCount" min="0" max="12" step="1" value="1" />
+                </label>
+                <label>
+                  <span data-i18n="smart.capacity.senior"></span>
+                  <input type="number" name="seniorCount" min="0" max="12" step="1" value="1" />
+                </label>
+              </div>
+
+              <div class="smart-grid">
+                <div class="form-row">
+                  <label for="rq-duration" data-i18n="smart.duration"></label>
+                  <select id="rq-duration" name="durationMonths">
+                    <option value="1" data-i18n="smart.duration.1"></option>
+                    <option value="2" data-i18n="smart.duration.2"></option>
+                    <option value="3" selected data-i18n="smart.duration.3"></option>
+                    <option value="6" data-i18n="smart.duration.6"></option>
+                    <option value="9" data-i18n="smart.duration.9"></option>
+                    <option value="12" data-i18n="smart.duration.12"></option>
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <label for="rq-model" data-i18n="smart.model"></label>
+                  <select id="rq-model" name="collaborationModel">
+                    <option value="outstaffing" data-i18n="smart.model.outstaffing"></option>
+                    <option value="dedicated" data-i18n="smart.model.dedicated"></option>
+                    <option value="fixed" data-i18n="smart.model.fixed"></option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="smart-section" data-section-name-key="smart.step.plan">
+              <div class="smart-section__head">
+                <span>04</span>
+                <div>
+                  <h3 data-i18n="smart.plan.title"></h3>
+                  <p data-i18n="smart.plan.lead"></p>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-stages" data-i18n="smart.stages"></label>
+                <textarea id="rq-stages" name="stages" rows="4" data-i18n-ph="smart.stages.ph" placeholder=""></textarea>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-notes" data-i18n="smart.notes"></label>
+                <textarea id="rq-notes" name="notes" rows="4" data-i18n-ph="smart.notes.ph" placeholder=""></textarea>
+              </div>
+
+              <div class="form-row">
+                <label for="rq-files" data-i18n="smart.files"></label>
+                <label class="file-drop" for="rq-files">
+                  <input type="file" id="rq-files" name="files" multiple />
+                  <span data-i18n="smart.files.drop"></span>
+                  <small id="file-list" data-i18n="smart.files.empty"></small>
+                  <small class="file-helper" data-i18n="smart.files.helper"></small>
+                </label>
+              </div>
+            </div>
+
+            <div class="smart-actions">
+              <button type="button" class="btn btn-ghost" id="clear-draft" data-i18n="smart.clear"></button>
+              <button type="submit" class="btn btn-primary" data-i18n="smart.submit"></button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="smart-aside">
+          <div class="smart-card analysis-card">
+            <div class="smart-card__head">
+              <span class="assistant-dot"></span>
+              <div>
+                <h3 data-i18n="smart.analysis.title"></h3>
+                <p data-i18n="smart.analysis.lead"></p>
+              </div>
+            </div>
+            <div id="analysis-preview" class="analysis-preview skeleton-ready"></div>
+          </div>
+
+          <div class="smart-card request-status-card" id="request-status-card">
+            <div class="smart-card__head">
+              <span class="assistant-dot"></span>
+              <div>
+                <h3 data-i18n="smart.status.title"></h3>
+                <p data-i18n="smart.status.hint"></p>
+              </div>
+            </div>
+            <div class="request-status-steps">
+              <span class="is-active" data-i18n="smart.status.ready"></span>
+              <span data-i18n="smart.status.received"></span>
+              <span data-i18n="smart.status.review"></span>
+              <span data-i18n="smart.status.estimate"></span>
+              <span data-i18n="smart.status.manager"></span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="../js/i18n.js?v=backend-tracker"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js?v=backend-tracker"></script>
+  <script src="../js/smart-requests.js?v=backend-tracker9"></script>
+
+  <script>
+    window.mountLayout();
+  </script>
+</body>
+</html>

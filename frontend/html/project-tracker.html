@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.tracker.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+  <div id="header-slot"></div>
+
+  <main class="page tracker-page">
+    <div class="container">
+      <div class="tracker-hero fade-in">
+        <div>
+          <a href="requests.html" class="back-link" data-i18n="tracker.back"></a>
+          <h1 id="tracker-title" data-i18n="tracker.title"></h1>
+          <p id="tracker-subtitle" data-i18n="tracker.lead"></p>
+        </div>
+        <div class="tracker-hero__actions">
+          <span class="sync-pill" id="tracker-sync-state" data-i18n="tracker.sync.loading"></span>
+          <a href="requests.html" class="btn btn-ghost" data-i18n="tracker.newRequest"></a>
+          <button type="button" class="btn btn-primary" id="add-task-btn" data-i18n="tracker.addTask"></button>
+        </div>
+      </div>
+
+      <section class="project-dashboard fade-in delay-1">
+        <div class="project-dashboard__head">
+          <div>
+            <h2 data-i18n="projects.dashboard.title"></h2>
+            <p data-i18n="projects.dashboard.lead"></p>
+          </div>
+          <div class="project-dashboard__filters">
+            <input type="search" id="project-search" data-i18n-ph="projects.search.ph" placeholder="" />
+            <select id="project-service-filter" aria-label="" data-i18n-aria="projects.filter.service">
+              <option value="all" data-i18n="projects.filter.all"></option>
+              <option value="it" data-i18n="requests.option.it"></option>
+              <option value="hr" data-i18n="requests.option.hr"></option>
+              <option value="accounting" data-i18n="requests.option.accounting"></option>
+              <option value="legal" data-i18n="requests.option.legal"></option>
+            </select>
+            <select id="project-status-filter" aria-label="" data-i18n-aria="projects.filter.status">
+              <option value="all" data-i18n="projects.filter.all"></option>
+              <option value="active" data-i18n="projects.status.active"></option>
+              <option value="review" data-i18n="projects.status.review"></option>
+              <option value="done" data-i18n="projects.status.done"></option>
+              <option value="demo" data-i18n="projects.status.demo"></option>
+            </select>
+          </div>
+        </div>
+        <div class="project-kpis" id="project-kpis"></div>
+        <div class="project-card-grid" id="project-cards"></div>
+      </section>
+
+      <section class="tracker-summary fade-in delay-1" id="tracker-summary"></section>
+
+      <section class="tracker-layout fade-in delay-2">
+        <div class="tracker-main">
+          <div class="tracker-toolbar">
+            <input type="search" id="task-search" data-i18n-ph="tracker.search" placeholder="" />
+            <select id="task-filter">
+              <option value="all" data-i18n="tracker.filter.all"></option>
+              <option value="new" data-i18n="status.new"></option>
+              <option value="in_progress" data-i18n="status.in_progress"></option>
+              <option value="review" data-i18n="status.review"></option>
+              <option value="done" data-i18n="status.done"></option>
+              <option value="cancelled" data-i18n="status.cancelled"></option>
+            </select>
+            <select id="task-sort">
+              <option value="stage" data-i18n="tracker.sort.stage"></option>
+              <option value="deadline" data-i18n="tracker.sort.deadline"></option>
+              <option value="status" data-i18n="tracker.sort.status"></option>
+            </select>
+          </div>
+
+          <div class="kanban-board" id="kanban-board"></div>
+
+          <section class="tracker-widget">
+            <div class="tracker-widget__head">
+              <h2 data-i18n="tracker.gantt.title"></h2>
+              <p data-i18n="tracker.gantt.lead"></p>
+            </div>
+            <div id="gantt-chart"></div>
+          </section>
+        </div>
+
+        <aside class="tracker-side">
+          <div class="smart-card">
+            <div class="smart-card__head">
+              <span class="assistant-dot"></span>
+              <div>
+                <h3 data-i18n="tracker.sprints.title"></h3>
+                <p data-i18n="tracker.sprints.lead"></p>
+              </div>
+            </div>
+            <div class="sprint-overview" id="sprint-overview"></div>
+          </div>
+
+          <div class="smart-card">
+            <div class="smart-card__head">
+              <span class="assistant-dot"></span>
+              <div>
+                <h3 data-i18n="tracker.stages"></h3>
+                <p data-i18n="tracker.stages.lead"></p>
+              </div>
+            </div>
+            <div class="project-timeline" id="project-timeline"></div>
+          </div>
+
+          <div class="smart-card">
+            <div class="smart-card__head">
+              <span class="assistant-dot"></span>
+              <div>
+                <h3 data-i18n="tracker.activity"></h3>
+                <p data-i18n="tracker.activity.lead"></p>
+              </div>
+            </div>
+            <div class="activity-log" id="activity-log"></div>
+          </div>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <div class="task-modal" id="task-modal" aria-hidden="true">
+    <div class="task-modal__panel">
+      <button type="button" class="task-modal__close" id="task-modal-close" data-i18n-aria="tracker.modal.close" aria-label="">×</button>
+      <h3 data-i18n="tracker.modal.title"></h3>
+      <form id="task-form" class="smart-form">
+        <div class="form-row">
+          <label for="task-title" data-i18n="tracker.modal.name"></label>
+          <input id="task-title" name="title" type="text" required />
+        </div>
+        <div class="form-row">
+          <label for="task-deadline" data-i18n="tracker.modal.deadline"></label>
+          <input id="task-deadline" name="deadline" type="date" />
+        </div>
+        <div class="form-row">
+          <label for="task-comment" data-i18n="tracker.modal.comment"></label>
+          <textarea id="task-comment" name="comment" rows="3"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit" data-i18n="tracker.modal.add"></button>
+      </form>
+    </div>
+  </div>
+
+  <div id="footer-slot"></div>
+
+  <script src="../js/i18n.js?v=backend-tracker"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js?v=backend-tracker"></script>
+
+  <script>
+    window.mountLayout();
+    if (!window.AX?.isAuthenticated()) {
+      window.location.replace("login.html");
+    } else {
+      const trackerScript = document.createElement("script");
+      trackerScript.src = "../js/smart-requests.js?v=backend-tracker9";
+      document.body.appendChild(trackerScript);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title data-i18n="page.login.title"></title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+
+<body>
+  <div id="header-slot"></div>
+
+  <main class="page login-shell">
+    <div class="login-card fade-in">
+
+      <div class="admin-login-top">
+        <div class="brand">
+          <img src="../img/logo.png" class="brand-logo" alt="" data-i18n-alt="brand.logoAlt">
+          <span>Axes Solutions</span>
+        </div>
+        <div class="admin-login-actions">
+          <select id="lang-select" class="lang-select" data-testid="lang-select">
+            <option value="ru">RU</option>
+            <option value="kz">KZ</option>
+            <option value="en">EN</option>
+          </select>
+        </div>
+      </div>
+
+      <h2 data-i18n="login.title"></h2>
+
+      <p class="lead" data-i18n="login.lead"></p>
+
+      <div class="auth-tabs">
+        <button class="active" type="button" data-auth-tab="login" data-i18n="login.tab.login"></button>
+        <button type="button" data-auth-tab="register" data-i18n="login.tab.register"></button>
+      </div>
+
+      <form id="login-form" novalidate>
+
+        <div class="form-row">
+          <label for="lg-email" data-i18n="login.email"></label>
+          <input type="email" id="lg-email" required />
+        </div>
+
+        <div class="form-row">
+          <label for="lg-password" data-i18n="login.password"></label>
+          <input type="password" id="lg-password" required />
+        </div>
+
+        <div class="form-error" id="lg-error"></div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;" data-i18n="login.submit"></button>
+
+      </form>
+
+      <form id="register-form" novalidate style="display:none;">
+        <div class="form-row">
+          <label for="rg-name" data-i18n="login.name"></label>
+          <input type="text" id="rg-name" required />
+        </div>
+
+        <div class="form-row">
+          <label for="rg-company" data-i18n="login.company"></label>
+          <input type="text" id="rg-company" />
+        </div>
+
+        <div class="form-row">
+          <label for="rg-email" data-i18n="login.email"></label>
+          <input type="email" id="rg-email" required />
+        </div>
+
+        <div class="form-row">
+          <label for="rg-password" data-i18n="login.password"></label>
+          <input type="password" id="rg-password" required minlength="6" />
+        </div>
+
+        <div class="form-error" id="rg-error"></div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;" data-i18n="login.register.submit"></button>
+      </form>
+
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+ 
+  <script src="../js/i18n.js"></script>
+  <script src="../js/partials.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    window.mountLayout();
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.AX.isAuthenticated()) {
+        window.location.href = window.AX.isAdmin() ? "../html/admin.html" : "../html/account.html";
+        return;
+      }
+
+      const form = document.getElementById("login-form");
+      const registerForm = document.getElementById("register-form");
+      const errEl = document.getElementById("lg-error");
+      const rgErrEl = document.getElementById("rg-error");
+
+      document.querySelectorAll("[data-auth-tab]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const isLogin = btn.dataset.authTab === "login";
+          document.querySelectorAll("[data-auth-tab]").forEach(item => item.classList.toggle("active", item === btn));
+          form.style.display = isLogin ? "" : "none";
+          registerForm.style.display = isLogin ? "none" : "";
+        });
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        errEl.textContent = "";
+        errEl.classList.remove("visible");
+
+        const email = document.getElementById("lg-email").value.trim();
+        const password = document.getElementById("lg-password").value;
+
+        if (!window.AX.validateEmail(email) || password.length < 6) {
+          errEl.textContent = window.I18N.t("login.validation.credentials");
+          errEl.classList.add("visible");
+          return;
+        }
+
+        try {
+          const res = await window.AX.api("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password })
+          });
+
+          localStorage.setItem("ax.token", res.token);
+          localStorage.setItem("ax.email", res.email);
+          localStorage.setItem("ax.role", res.role);
+          localStorage.setItem("ax.name", res.name || "");
+          localStorage.setItem("ax.company", res.company || "");
+
+          window.location.href = res.role === "admin" ? "../html/admin.html" : "../html/account.html";
+
+        } catch (err) {
+          errEl.textContent = window.I18N.t("login.error");
+          errEl.classList.add("visible");
+        }
+      });
+
+      registerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        rgErrEl.textContent = "";
+        rgErrEl.classList.remove("visible");
+
+        const name = document.getElementById("rg-name").value.trim();
+        const company = document.getElementById("rg-company").value.trim();
+        const email = document.getElementById("rg-email").value.trim();
+        const password = document.getElementById("rg-password").value;
+
+        if (name.length < 2 || !window.AX.validateEmail(email) || password.length < 6) {
+          rgErrEl.textContent = window.I18N.t("login.validation.register");
+          rgErrEl.classList.add("visible");
+          return;
+        }
+
+        try {
+          const res = await window.AX.api("/auth/register", {
+            method: "POST",
+            body: JSON.stringify({ name, company, email, password })
+          });
+
+          localStorage.setItem("ax.token", res.token);
+          localStorage.setItem("ax.email", res.email);
+          localStorage.setItem("ax.role", res.role);
+          localStorage.setItem("ax.name", res.name || name);
+          localStorage.setItem("ax.company", res.company || company);
+
+          window.location.href = "../html/account.html";
+        } catch (err) {
+          rgErrEl.textContent = window.I18N.t(err.status === 409
+            ? "login.register.duplicate"
+            : "login.register.error");
+          rgErrEl.classList.add("visible");
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
